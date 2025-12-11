@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分數圖形著色產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* 分數的直式寫法 CSS */
+        .fraction {
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 1.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .fraction .numerator {
+            display: block;
+            border-bottom: 2px solid black;
+            padding-bottom: 1px;
+        }
+        .fraction .denominator {
+            display: block;
+            padding-top: 1px;
+        }
+
+        /* 格線與圖表樣式 */
+        .worksheet-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 預設三欄 */
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .question-card {
+            border: 2px solid #e5e7eb;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            page-break-inside: avoid; /* 避免列印時被切斷 */
+        }
+
+        svg {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* 列印專用樣式 */
+        @media print {
+            @page {
+                size: A4;
+                margin: 1cm;
+            }
+            body {
+                background-color: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .worksheet-container {
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .question-card {
+                border: 1px solid #ccc; /* 列印時邊框細一點 */
+                box-shadow: none;
+            }
+            /* 強制列印背景圖形顏色（雖然我們是黑白的，但以防萬一） */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <!-- 控制面板 (列印時隱藏) -->
+    <div class="no-print max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">🎨 分數圖形著色學習單產生器</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">標題名稱：</label>
+                <input type="text" id="sheetTitleInput" value="分數塗色練習" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">題目數量 (5-20)：</label>
+                <input type="number" id="qCount" min="5" max="20" value="12" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">圖形類型：</label>
+                <select id="chartType" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="mixed">混合 (圓餅圖 + 長條圖)</option>
+                    <option value="pie">只生成圓餅圖</option>
+                    <option value="bar">只生成長條圖</option>
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button onclick="generateWorksheet()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded mr-2 transition">
+                    重新生成題目
+                </button>
+                <button onclick="handlePrint()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    列印 / 存成 PDF
+                </button>
+            </div>
+        </div>
+        <p class="text-sm text-gray-500 mt-4">提示：點擊「列印」後，在印表機選項中選擇「另存為 PDF」即可儲存檔案。</p>
+    </div>
+
+    <!-- 學習單預覽區域 -->
+    <div id="worksheetArea" class="worksheet-container max-w-4xl mx-auto bg-white p-8 shadow-lg min-h-screen">
+        
+        <!-- 學習單頭部 -->
+        <div class="flex justify-between items-end border-b-2 border-black pb-4 mb-6">
+            <div>
+                <h1 id="displayTitle" class="text-3xl font-bold text-black">分數塗色練習</h1>
+            </div>
+            <div class="text-right flex gap-8">
+                <div class="text-lg">班級：__________</div>
+                <div class="text-lg">姓名：__________</div>
+                <div class="text-lg">日期：__________</div>
+            </div>
+        </div>
+
+        <!-- 題目生成區 -->
+        <div id="questionsGrid" class="worksheet-grid">
+            <!-- 題目將會插入到這裡 -->
+        </div>
+
+    </div>
+
+    <script>
+        // 初始化
+        window.onload = generateWorksheet;
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // SVG 圓餅圖生成器
+        function createPieChartSVG(denominator) {
+            const size = 150;
+            const cx = size / 2;
+            const cy = size / 2;
+            const r = (size / 2) - 5; // 留邊距
+            
+            let lines = "";
+            for (let i = 0; i < denominator; i++) {
+                // 每個切片的角度 (弧度)
+                // 從 -90度 (12點鐘方向) 開始
+                const angle = (i * 2 * Math.PI / denominator) - (Math.PI / 2);
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                lines += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="black" stroke-width="2" />`;
+            }
+
+            return `
+                <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+                    <!-- 外圈 -->
+                    <circle cx="${cx}" cy="${cy}" r="${r}" stroke="black" stroke-width="2" fill="none" />
+                    <!-- 分隔線 -->
+                    ${lines}
+                </svg>
+            `;
+        }
+
+        // SVG 長條圖生成器
+        function createBarChartSVG(denominator) {
+            const width = 200;
+            const height = 50;
+            const step = width / denominator;
+            
+            let lines = "";
+            for (let i = 1; i < denominator; i++) {
+                const x = i * step;
+                lines += `<line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="black" stroke-width="2" />`;
+            }
+
+            return `
+                <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+                    <!-- 外框 -->
+                    <rect x="1" y="1" width="${width-2}" height="${height-2}" stroke="black" stroke-width="2" fill="none" />
+                    <!-- 分隔線 -->
+                    ${lines}
+                </svg>
+            `;
+        }
+
+        // 新增列印處理函數，確保先取得焦點
+        function handlePrint() {
+            window.focus(); // 重要：確保視窗是活動的
+            setTimeout(() => {
+                window.print();
+            }, 100); // 稍微延遲以確保焦點切換完成
+        }
+
+        function generateWorksheet() {
+            const grid = document.getElementById('questionsGrid');
+            grid.innerHTML = ''; // 清空舊題目
+
+            // 取得設定值
+            const titleInput = document.getElementById('sheetTitleInput').value;
+            document.getElementById('displayTitle').innerText = titleInput;
+
+            let count = parseInt(document.getElementById('qCount').value);
+            if (count < 5) count = 5;
+            if (count > 20) count = 20;
+
+            const chartType = document.getElementById('chartType').value;
+
+            for (let i = 1; i <= count; i++) {
+                // 隨機生成分母 (3-15，2太簡單但也可以包含，這裡設2-15)
+                const denominator = getRandomInt(2, 15);
+                // 隨機生成分子 (1 到 分母-1，避免全滿)
+                const numerator = getRandomInt(1, denominator);
+
+                // 決定類型
+                let type = 'pie';
+                if (chartType === 'bar') type = 'bar';
+                else if (chartType === 'mixed') {
+                    type = Math.random() > 0.5 ? 'pie' : 'bar';
+                }
+
+                let svgHtml = '';
+                if (type === 'pie') {
+                    svgHtml = createPieChartSVG(denominator);
+                } else {
+                    svgHtml = createBarChartSVG(denominator);
+                }
+
+                // 建立卡片 HTML
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.innerHTML = `
+                    <div class="mb-4 text-lg font-bold">第 ${i} 題</div>
+                    <div class="mb-4">
+                        ${svgHtml}
+                    </div>
+                    <div class="text-xl flex items-center gap-2">
+                        <span>請塗上：</span>
+                        <div class="fraction">
+                            <span class="numerator">${numerator}</span>
+                            <span class="denominator">${denominator}</span>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            }
+        }
+    </script>
+</body>
+</html>

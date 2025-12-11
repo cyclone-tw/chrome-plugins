@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分數圖形著色產生器 - 互動版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* 低調奢華暗色系配色 */
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #242424;
+            --bg-hover: #2d2d2d;
+            --border-color: #3d3d3d;
+            --border-accent: #4a4a4a;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6b6b6b;
+            /* 著色用橘色 */
+            --accent-orange: #e67e22;
+            --accent-orange-light: #f39c12;
+            --accent-orange-dark: #d35400;
+            /* 按鈕螢光色系 */
+            --neon-green: #39ff14;
+            --neon-green-dim: #2ed10f;
+            --neon-yellow: #ccff00;
+            --neon-yellow-dim: #b8e600;
+            --success: #39ff14;
+            --error: #ff4757;
+            --gold: #ffd700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* 頂部導航 */
+        .navbar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar h1 span {
+            color: var(--accent-orange);
+        }
+
+        /* 模式切換標籤 */
+        .mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .mode-tab {
+            padding: 0.6rem 1.5rem;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .mode-tab:first-child {
+            border-radius: 6px 0 0 6px;
+        }
+
+        .mode-tab:last-child {
+            border-radius: 0 6px 6px 0;
+        }
+
+        .mode-tab.active {
+            background: var(--neon-green);
+            border-color: var(--neon-green);
+            color: #0d0d0d;
+            font-weight: 600;
+            text-shadow: none;
+        }
+
+        .mode-tab:hover:not(.active) {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        /* 主要內容區 */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .control-group input,
+        .control-group select {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+        }
+
+        .control-group select option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--neon-green);
+            color: #0d0d0d;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--neon-green-dim);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+        }
+
+        .btn-success {
+            background: var(--neon-yellow);
+            color: #0d0d0d;
+            font-weight: 600;
+        }
+
+        .btn-success:hover {
+            background: var(--neon-yellow-dim);
+            box-shadow: 0 0 15px rgba(204, 255, 0, 0.4);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* 計時器 */
+        .timer-display {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: var(--neon-green);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+        }
+
+        /* 學生資訊區 */
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .student-info label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .student-info input {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        /* 題目網格 */
+        .worksheet-grid {
+            display: grid;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .columns-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .columns-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .columns-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        /* 題目卡片 */
+        .question-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: border-color 0.2s ease;
+        }
+
+        .question-card:hover {
+            border-color: var(--border-accent);
+        }
+
+        .question-card.correct {
+            border-color: var(--success);
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .question-card.incorrect {
+            border-color: var(--error);
+            background: rgba(192, 57, 43, 0.1);
+        }
+
+        .question-number {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .question-chart {
+            margin-bottom: 1rem;
+        }
+
+        /* SVG 樣式 */
+        .chart-svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .pie-slice,
+        .bar-cell {
+            fill: transparent;
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: fill 0.2s ease;
+        }
+
+        .pie-slice:hover,
+        .bar-cell:hover {
+            fill: rgba(230, 126, 34, 0.3);
+        }
+
+        .pie-slice.colored,
+        .bar-cell.colored {
+            fill: var(--accent-orange);
+        }
+
+        .pie-slice.colored:hover,
+        .bar-cell.colored:hover {
+            fill: var(--accent-orange-light);
+        }
+
+        .pie-slice.locked,
+        .bar-cell.locked {
+            cursor: default;
+        }
+
+        /* 分數輸入 */
+        .fraction-display {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .fraction-box {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .fraction-box .numerator {
+            border-bottom: 2px solid var(--text-primary);
+            padding: 0.25rem 0.5rem;
+            min-width: 40px;
+        }
+
+        .fraction-box .denominator {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .fraction-input {
+            width: 50px;
+            text-align: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.25rem;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+
+        .fraction-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+        }
+
+        /* 回饋訊息 */
+        .feedback {
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .feedback.correct {
+            background: rgba(57, 255, 20, 0.2);
+            color: var(--success);
+        }
+
+        .feedback.incorrect {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--error);
+        }
+
+        /* 正確答案顯示 */
+        .correct-answer-display {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px dashed #00d4d4;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #00d4d4;
+        }
+
+        /* 著色題回饋樣式 */
+        .pie-slice.should-be-colored,
+        .bar-cell.should-be-colored {
+            stroke: #00d4d4 !important;
+            stroke-width: 3 !important;
+            stroke-dasharray: 5, 3;
+        }
+
+        .pie-slice.wrong-colored,
+        .bar-cell.wrong-colored {
+            fill: var(--error) !important;
+            opacity: 0.6;
+        }
+
+        .pie-slice.correct-colored,
+        .bar-cell.correct-colored {
+            fill: var(--success) !important;
+        }
+
+        /* 結果摘要 */
+        .results-summary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .results-summary h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            color: var(--gold);
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--accent-orange);
+            margin-bottom: 1rem;
+        }
+
+        .score-display span {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .time-display {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .error-list {
+            text-align: left;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .error-list h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--error);
+        }
+
+        .error-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .error-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Google Sheets 設定區 */
+        .sheets-config {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .sheets-config input {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        /* 列印樣式 */
+        @media print {
+            @page {
+                size: A4;
+                margin: 1cm;
+            }
+
+            body {
+                background-color: white;
+                color: black;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .main-container {
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .question-card {
+                background: white;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+            }
+
+            .pie-slice,
+            .bar-cell {
+                stroke: black;
+            }
+
+            .pie-slice.colored,
+            .bar-cell.colored {
+                fill: #999;
+            }
+
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* 列印模式專用頭部 */
+        .print-header {
+            display: none;
+        }
+
+        @media print {
+            .print-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                border-bottom: 2px solid black;
+                padding-bottom: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .print-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .print-header .info-fields {
+                display: flex;
+                gap: 2rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .worksheet-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .student-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 導航列 -->
+    <nav class="navbar no-print">
+        <h1>🎨 分數圖形著色<span>互動學習</span></h1>
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('print')">📄 列印模式</button>
+            <button class="mode-tab" onclick="switchMode('colorToFraction')">👁️ 看圖寫分數</button>
+            <button class="mode-tab" onclick="switchMode('fractionToColor')">✏️ 看分數塗圖</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- 控制面板 -->
+        <div class="control-panel no-print">
+            <div class="panel-title">⚙️ 題目設定</div>
+            <div class="control-grid">
+                <div class="control-group">
+                    <label>學習單標題</label>
+                    <input type="text" id="sheetTitle" value="分數塗色練習">
+                </div>
+                <div class="control-group">
+                    <label>學生姓名</label>
+                    <input type="text" id="studentName" placeholder="請輸入姓名">
+                </div>
+                <div class="control-group">
+                    <label>題目數量</label>
+                    <input type="number" id="questionCount" min="3" max="20" value="9">
+                </div>
+                <div class="control-group">
+                    <label>欄位數量</label>
+                    <select id="columnCount">
+                        <option value="2">2 欄</option>
+                        <option value="3" selected>3 欄</option>
+                        <option value="4">4 欄</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>圖形類型</label>
+                    <select id="chartType">
+                        <option value="mixed">混合</option>
+                        <option value="pie">只有圓餅圖</option>
+                        <option value="bar">只有長條圖</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>分數類型</label>
+                    <select id="fractionType">
+                        <option value="proper">真分數（分子 < 分母）</option>
+                        <option value="improper">假分數（分子 ≥ 分母）</option>
+                        <option value="mixed">混合</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>難度等級</label>
+                    <select id="difficulty">
+                        <option value="easy">簡單（分母 2-6）</option>
+                        <option value="medium" selected>中等（分母 2-10）</option>
+                        <option value="hard">困難（分母 2-15）</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>計時器</label>
+                    <div class="timer-display" id="timerDisplay">00:00</div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="generateWorksheet()">
+                    🔄 重新生成題目
+                </button>
+                <button class="btn btn-secondary" id="printBtn" onclick="handlePrint()">
+                    🖨️ 列印 / 存 PDF
+                </button>
+                <button class="btn btn-success" id="submitBtn" onclick="submitAnswers()" style="display: none;">
+                    ✅ 送出答案
+                </button>
+                <button class="btn btn-secondary" id="timerBtn" onclick="toggleTimer()">
+                    ⏱️ 開始計時
+                </button>
+            </div>
+
+            <!-- Google Sheets 設定 -->
+            <div class="sheets-config">
+                <label style="font-size: 0.85rem; color: var(--text-secondary);">
+                    📊 Google Sheets Web App URL（可選）
+                </label>
+                <input type="text" id="sheetsUrl" placeholder="貼上你的 Google Apps Script 網址">
+            </div>
+        </div>
+
+        <!-- 列印專用頭部 -->
+        <div class="print-header">
+            <h1 id="printTitle">分數塗色練習</h1>
+            <div class="info-fields">
+                <span>班級：__________</span>
+                <span>姓名：<span id="printStudentName">__________</span></span>
+                <span>日期：__________</span>
+            </div>
+        </div>
+
+        <!-- 題目區域 -->
+        <div id="worksheetGrid" class="worksheet-grid columns-3">
+            <!-- 題目將在此生成 -->
+        </div>
+
+        <!-- 結果摘要（互動模式用） -->
+        <div id="resultsSummary" class="results-summary" style="display: none;">
+            <!-- 結果將在此顯示 -->
+        </div>
+    </div>
+
+    <script>
+        // ============ 全域變數 ============
+        let currentMode = 'print'; // 'print', 'colorToFraction', 'fractionToColor'
+        let questions = [];
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let timerRunning = false;
+
+        // ============ 初始化 ============
+        window.onload = function () {
+            generateWorksheet();
+        };
+
+        // ============ 工具函數 ============
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getDifficultyRange() {
+            const difficulty = document.getElementById('difficulty').value;
+            switch (difficulty) {
+                case 'easy': return { min: 2, max: 6 };
+                case 'medium': return { min: 2, max: 10 };
+                case 'hard': return { min: 2, max: 15 };
+                default: return { min: 2, max: 10 };
+            }
+        }
+
+        // ============ 模式切換 ============
+        function switchMode(mode) {
+            currentMode = mode;
+
+            // 更新標籤樣式
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 顯示/隱藏按鈕
+            const printBtn = document.getElementById('printBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (mode === 'print') {
+                printBtn.style.display = 'inline-flex';
+                submitBtn.style.display = 'none';
+            } else {
+                printBtn.style.display = 'none';
+                submitBtn.style.display = 'inline-flex';
+            }
+
+            // 隱藏結果摘要
+            document.getElementById('resultsSummary').style.display = 'none';
+
+            // 重新生成題目
+            generateWorksheet();
+
+            // 重置計時器
+            resetTimer();
+        }
+
+        // ============ 計時器功能 ============
+        function toggleTimer() {
+            if (timerRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            timerRunning = true;
+            document.getElementById('timerBtn').textContent = '⏸️ 暫停計時';
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            timerRunning = false;
+            document.getElementById('timerBtn').textContent = '⏱️ 繼續計時';
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            timerRunning = false;
+            timerSeconds = 0;
+            clearInterval(timerInterval);
+            document.getElementById('timerBtn').textContent = '⏱️ 開始計時';
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            document.getElementById('timerDisplay').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes} 分 ${seconds} 秒`;
+        }
+
+        // ============ 圖形生成 ============
+        function createPieChartSVG(denominator, coloredCount = 0, interactive = false, questionIndex = -1) {
+            const size = 140;
+            const cx = size / 2;
+            const cy = size / 2;
+            const r = (size / 2) - 10;
+
+            let paths = '';
+
+            for (let i = 0; i < denominator; i++) {
+                // 計算每個切片的角度
+                const startAngle = (i * 2 * Math.PI / denominator) - (Math.PI / 2);
+                const endAngle = ((i + 1) * 2 * Math.PI / denominator) - (Math.PI / 2);
+
+                const x1 = cx + r * Math.cos(startAngle);
+                const y1 = cy + r * Math.sin(startAngle);
+                const x2 = cx + r * Math.cos(endAngle);
+                const y2 = cy + r * Math.sin(endAngle);
+
+                const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
+
+                const isColored = i < coloredCount;
+                const coloredClass = isColored ? 'colored' : '';
+                const lockedClass = (currentMode === 'colorToFraction' && isColored) ? 'locked' : '';
+                const clickHandler = interactive && currentMode === 'fractionToColor'
+                    ? `onclick="toggleSlice(${questionIndex}, ${i})"`
+                    : '';
+
+                paths += `<path 
+                    class="pie-slice ${coloredClass} ${lockedClass}" 
+                    d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2} ${y2} Z"
+                    data-index="${i}"
+                    ${clickHandler}
+                />`;
+            }
+
+            return `<svg class="chart-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+                <circle cx="${cx}" cy="${cy}" r="${r}" stroke="var(--text-secondary)" stroke-width="2" fill="none"/>
+                ${paths}
+            </svg>`;
+        }
+
+        function createBarChartSVG(denominator, coloredCount = 0, interactive = false, questionIndex = -1) {
+            const width = 180;
+            const height = 50;
+            const cellWidth = width / denominator;
+
+            let rects = '';
+
+            for (let i = 0; i < denominator; i++) {
+                const x = i * cellWidth;
+                const isColored = i < coloredCount;
+                const coloredClass = isColored ? 'colored' : '';
+                const lockedClass = (currentMode === 'colorToFraction' && isColored) ? 'locked' : '';
+                const clickHandler = interactive && currentMode === 'fractionToColor'
+                    ? `onclick="toggleCell(${questionIndex}, ${i})"`
+                    : '';
+
+                rects += `<rect 
+                    class="bar-cell ${coloredClass} ${lockedClass}" 
+                    x="${x + 1}" 
+                    y="1" 
+                    width="${cellWidth - 2}" 
+                    height="${height - 2}"
+                    data-index="${i}"
+                    ${clickHandler}
+                />`;
+            }
+
+            return `<svg class="chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+                <rect x="0" y="0" width="${width}" height="${height}" stroke="var(--text-secondary)" stroke-width="2" fill="none"/>
+                ${rects}
+            </svg>`;
+        }
+
+        // ============ 點擊著色功能 ============
+        function toggleSlice(questionIndex, sliceIndex) {
+            const card = document.querySelectorAll('.question-card')[questionIndex];
+            const slice = card.querySelectorAll('.pie-slice')[sliceIndex];
+            if (slice && !slice.classList.contains('locked')) {
+                slice.classList.toggle('colored');
+                updateUserAnswer(questionIndex);
+            }
+        }
+
+        function toggleCell(questionIndex, cellIndex) {
+            const card = document.querySelectorAll('.question-card')[questionIndex];
+            const cell = card.querySelectorAll('.bar-cell')[cellIndex];
+            if (cell && !cell.classList.contains('locked')) {
+                cell.classList.toggle('colored');
+                updateUserAnswer(questionIndex);
+            }
+        }
+
+        function updateUserAnswer(questionIndex) {
+            const card = document.querySelectorAll('.question-card')[questionIndex];
+            const coloredElements = card.querySelectorAll('.pie-slice.colored, .bar-cell.colored');
+            questions[questionIndex].userAnswer = coloredElements.length;
+        }
+
+        // ============ 題目生成 ============
+        function generateWorksheet() {
+            const grid = document.getElementById('worksheetGrid');
+            grid.innerHTML = '';
+            questions = [];
+
+            // 更新標題
+            const title = document.getElementById('sheetTitle').value;
+            document.getElementById('printTitle').textContent = title;
+
+            // 更新學生姓名
+            const studentName = document.getElementById('studentName').value;
+            document.getElementById('printStudentName').textContent = studentName || '__________';
+
+            // 取得設定
+            let count = parseInt(document.getElementById('questionCount').value);
+            count = Math.max(3, Math.min(20, count));
+
+            const columns = document.getElementById('columnCount').value;
+            grid.className = `worksheet-grid columns-${columns}`;
+
+            const chartType = document.getElementById('chartType').value;
+            const fractionType = document.getElementById('fractionType').value;
+            const difficultyRange = getDifficultyRange();
+
+            // 生成題目
+            for (let i = 0; i < count; i++) {
+                const denominator = getRandomInt(difficultyRange.min, difficultyRange.max);
+                let numerator;
+
+                // 根據分數類型生成分子
+                if (fractionType === 'proper') {
+                    numerator = getRandomInt(1, denominator - 1);
+                } else if (fractionType === 'improper') {
+                    numerator = getRandomInt(denominator, denominator * 2);
+                } else {
+                    // 混合模式
+                    if (Math.random() > 0.5) {
+                        numerator = getRandomInt(1, denominator - 1);
+                    } else {
+                        numerator = getRandomInt(denominator, Math.min(denominator * 2, 20));
+                    }
+                }
+
+                // 確保分子至少為1
+                numerator = Math.max(1, numerator);
+
+                // 決定圖形類型
+                let type = chartType;
+                if (chartType === 'mixed') {
+                    type = Math.random() > 0.5 ? 'pie' : 'bar';
+                }
+
+                // 儲存題目資訊
+                const question = {
+                    index: i,
+                    numerator: numerator,
+                    denominator: denominator,
+                    chartType: type,
+                    userAnswer: null
+                };
+                questions.push(question);
+
+                // 建立卡片
+                const card = createQuestionCard(question, i);
+                grid.appendChild(card);
+            }
+
+            // 隱藏結果摘要
+            document.getElementById('resultsSummary').style.display = 'none';
+        }
+
+        function createQuestionCard(question, index) {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.id = `question-${index}`;
+
+            const interactive = currentMode !== 'print';
+            let chartHTML = '';
+            let inputHTML = '';
+
+            // 計算需要多少個圖形
+            const chartCount = Math.ceil(question.numerator / question.denominator);
+            const isImproper = question.numerator > question.denominator;
+
+            if (currentMode === 'print') {
+                // 列印模式：空白圖形 + 顯示分數
+                chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, 0, chartCount, false, index);
+                inputHTML = `
+                    <div class="fraction-display">
+                        <span>請塗上：</span>
+                        <div class="fraction-box">
+                            <span class="numerator">${question.numerator}</span>
+                            <span class="denominator">${question.denominator}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (currentMode === 'colorToFraction') {
+                // 看圖寫分數：已著色圖形 + 輸入框
+                chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, question.numerator, chartCount, false, index);
+                inputHTML = `
+                    <div class="fraction-display">
+                        <span>這是</span>
+                        <div class="fraction-box">
+                            <input type="number" class="fraction-input numerator-input" 
+                                   data-question="${index}" min="0" placeholder="?">
+                            <input type="number" class="fraction-input denominator-input" 
+                                   data-question="${index}" min="1" placeholder="?">
+                        </div>
+                    </div>
+                `;
+            } else if (currentMode === 'fractionToColor') {
+                // 看分數塗圖：空白可點擊圖形 + 顯示分數
+                chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, 0, chartCount, true, index);
+                inputHTML = `
+                    <div class="fraction-display">
+                        <span>請塗上</span>
+                        <div class="fraction-box">
+                            <span class="numerator">${question.numerator}</span>
+                            <span class="denominator">${question.denominator}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="question-number">第 ${index + 1} 題</div>
+                <div class="question-chart">${chartHTML}</div>
+                ${inputHTML}
+                <div class="feedback" id="feedback-${index}" style="display: none;"></div>
+            `;
+
+            return card;
+        }
+
+        // 生成多個圖形（用於假分數）
+        function createMultipleChartsSVG(chartType, denominator, coloredTotal, chartCount, interactive, questionIndex) {
+            let html = '<div class="multi-chart-container" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">';
+            let remainingColored = coloredTotal;
+            let globalSliceIndex = 0;
+
+            for (let c = 0; c < chartCount; c++) {
+                // 計算這個圖形要著色多少
+                const coloredInThisChart = Math.min(remainingColored, denominator);
+                remainingColored -= coloredInThisChart;
+
+                if (chartType === 'pie') {
+                    html += createPieChartSVGWithOffset(denominator, coloredInThisChart, interactive, questionIndex, globalSliceIndex);
+                } else {
+                    html += createBarChartSVGWithOffset(denominator, coloredInThisChart, interactive, questionIndex, globalSliceIndex);
+                }
+                globalSliceIndex += denominator;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        // 圓餅圖（帶有全域索引偏移）
+        function createPieChartSVGWithOffset(denominator, coloredCount, interactive, questionIndex, sliceOffset) {
+            const size = 120;
+            const cx = size / 2;
+            const cy = size / 2;
+            const r = (size / 2) - 8;
+
+            let paths = '';
+
+            for (let i = 0; i < denominator; i++) {
+                const globalIndex = sliceOffset + i;
+                const startAngle = (i * 2 * Math.PI / denominator) - (Math.PI / 2);
+                const endAngle = ((i + 1) * 2 * Math.PI / denominator) - (Math.PI / 2);
+
+                const x1 = cx + r * Math.cos(startAngle);
+                const y1 = cy + r * Math.sin(startAngle);
+                const x2 = cx + r * Math.cos(endAngle);
+                const y2 = cy + r * Math.sin(endAngle);
+
+                const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
+
+                const isColored = i < coloredCount;
+                const coloredClass = isColored ? 'colored' : '';
+                const lockedClass = (currentMode === 'colorToFraction' && isColored) ? 'locked' : '';
+                const clickHandler = interactive && currentMode === 'fractionToColor'
+                    ? `onclick="toggleSliceGlobal(${questionIndex}, ${globalIndex})"`
+                    : '';
+
+                paths += `<path 
+                    class="pie-slice ${coloredClass} ${lockedClass}" 
+                    d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2} ${y2} Z"
+                    data-index="${globalIndex}"
+                    ${clickHandler}
+                />`;
+            }
+
+            return `<svg class="chart-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+                <circle cx="${cx}" cy="${cy}" r="${r}" stroke="var(--text-secondary)" stroke-width="2" fill="none"/>
+                ${paths}
+            </svg>`;
+        }
+
+        // 長條圖（帶有全域索引偏移）
+        function createBarChartSVGWithOffset(denominator, coloredCount, interactive, questionIndex, cellOffset) {
+            const width = 150;
+            const height = 40;
+            const cellWidth = width / denominator;
+
+            let rects = '';
+
+            for (let i = 0; i < denominator; i++) {
+                const globalIndex = cellOffset + i;
+                const x = i * cellWidth;
+                const isColored = i < coloredCount;
+                const coloredClass = isColored ? 'colored' : '';
+                const lockedClass = (currentMode === 'colorToFraction' && isColored) ? 'locked' : '';
+                const clickHandler = interactive && currentMode === 'fractionToColor'
+                    ? `onclick="toggleCellGlobal(${questionIndex}, ${globalIndex})"`
+                    : '';
+
+                rects += `<rect 
+                    class="bar-cell ${coloredClass} ${lockedClass}" 
+                    x="${x + 1}" 
+                    y="1" 
+                    width="${cellWidth - 2}" 
+                    height="${height - 2}"
+                    data-index="${globalIndex}"
+                    ${clickHandler}
+                />`;
+            }
+
+            return `<svg class="chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+                <rect x="0" y="0" width="${width}" height="${height}" stroke="var(--text-secondary)" stroke-width="2" fill="none"/>
+                ${rects}
+            </svg>`;
+        }
+
+        // 全域版點擊切換（支援多圖形）
+        function toggleSliceGlobal(questionIndex, globalSliceIndex) {
+            const card = document.querySelectorAll('.question-card')[questionIndex];
+            const slice = card.querySelector(`.pie-slice[data-index="${globalSliceIndex}"]`);
+            if (slice && !slice.classList.contains('locked')) {
+                slice.classList.toggle('colored');
+                updateUserAnswerGlobal(questionIndex);
+            }
+        }
+
+        function toggleCellGlobal(questionIndex, globalCellIndex) {
+            const card = document.querySelectorAll('.question-card')[questionIndex];
+            const cell = card.querySelector(`.bar-cell[data-index="${globalCellIndex}"]`);
+            if (cell && !cell.classList.contains('locked')) {
+                cell.classList.toggle('colored');
+                updateUserAnswerGlobal(questionIndex);
+            }
+        }
+
+        function updateUserAnswerGlobal(questionIndex) {
+            const card = document.querySelectorAll('.question-card')[questionIndex];
+            const coloredElements = card.querySelectorAll('.pie-slice.colored, .bar-cell.colored');
+            questions[questionIndex].userAnswer = coloredElements.length;
+        }
+
+        // ============ 答案提交與驗證 ============
+        function submitAnswers() {
+            // 暫停計時器
+            if (timerRunning) {
+                pauseTimer();
+            }
+
+            let correctCount = 0;
+            const errors = [];
+
+            questions.forEach((question, index) => {
+                const card = document.getElementById(`question-${index}`);
+                const feedback = document.getElementById(`feedback-${index}`);
+                let isCorrect = false;
+                let errorMessage = '';
+
+                if (currentMode === 'colorToFraction') {
+                    // 看圖寫分數模式
+                    const numInput = card.querySelector('.numerator-input');
+                    const denomInput = card.querySelector('.denominator-input');
+                    const userNum = parseInt(numInput.value) || 0;
+                    const userDenom = parseInt(denomInput.value) || 0;
+
+                    // 檢查是否等值
+                    isCorrect = (userNum === question.numerator && userDenom === question.denominator);
+
+                    if (!isCorrect) {
+                        errorMessage = `正確答案是 ${question.numerator}/${question.denominator}，你答的是 ${userNum}/${userDenom}`;
+
+                        // 在卡片上顯示正確答案
+                        showCorrectAnswerForFraction(card, question.numerator, question.denominator);
+                    }
+                } else if (currentMode === 'fractionToColor') {
+                    // 看分數塗圖模式
+                    const allElements = card.querySelectorAll('.pie-slice, .bar-cell');
+                    const coloredElements = card.querySelectorAll('.pie-slice.colored, .bar-cell.colored');
+                    const userColoredCount = coloredElements.length;
+
+                    // 假分數時需要塗滿所有圖形的對應格數
+                    const expectedCount = question.numerator;
+                    isCorrect = (userColoredCount === expectedCount);
+
+                    if (!isCorrect) {
+                        if (question.numerator > question.denominator) {
+                            const fullCharts = Math.floor(question.numerator / question.denominator);
+                            const remainder = question.numerator % question.denominator;
+                            errorMessage = `${question.numerator}/${question.denominator} 是假分數，需要塗滿 ${fullCharts} 個完整圖形加上 ${remainder} 格，共 ${question.numerator} 格，但你塗了 ${userColoredCount} 格`;
+                        } else {
+                            errorMessage = `${question.numerator}/${question.denominator} 表示要塗 ${question.numerator} 格，但你塗了 ${userColoredCount} 格`;
+                        }
+
+                        // 標記著色錯誤：顯示正確和錯誤的格子
+                        markColoringFeedback(card, question.numerator);
+                    } else {
+                        // 正確的話，標記所有著色為綠色
+                        coloredElements.forEach(el => {
+                            el.classList.add('correct-colored');
+                        });
+                    }
+                }
+
+                // 更新卡片樣式
+                card.classList.remove('correct', 'incorrect');
+                card.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+                // 顯示回饋
+                feedback.style.display = 'block';
+                feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+                feedback.textContent = isCorrect ? '✓ 正確！' : '✗ 錯誤';
+
+                if (isCorrect) {
+                    correctCount++;
+                } else {
+                    errors.push({
+                        questionNumber: index + 1,
+                        message: errorMessage
+                    });
+                }
+            });
+
+            // 顯示結果摘要
+            showResultsSummary(correctCount, questions.length, errors);
+
+            // 發送到 Google Sheets
+            sendToGoogleSheets(correctCount, questions.length, errors);
+        }
+
+        // 顯示正確答案（看圖寫分數模式）
+        function showCorrectAnswerForFraction(card, numerator, denominator) {
+            // 移除舊的正確答案顯示
+            const oldDisplay = card.querySelector('.correct-answer-display');
+            if (oldDisplay) oldDisplay.remove();
+
+            // 新增正確答案顯示
+            const correctDisplay = document.createElement('div');
+            correctDisplay.className = 'correct-answer-display';
+            correctDisplay.innerHTML = `
+                <span>✓ 正確答案：</span>
+                <span style="font-weight: bold; font-size: 1.1rem;">
+                    <span style="border-bottom: 2px solid #00d4d4; padding: 0 5px;">${numerator}</span>
+                    <span style="margin: 0 2px;">/</span>
+                    <span style="padding: 0 5px;">${denominator}</span>
+                </span>
+            `;
+            card.appendChild(correctDisplay);
+        }
+
+        // 標記著色回饋（看分數塗圖模式）
+        function markColoringFeedback(card, expectedCount) {
+            const allElements = card.querySelectorAll('.pie-slice, .bar-cell');
+
+            allElements.forEach((el, index) => {
+                const isColored = el.classList.contains('colored');
+                const shouldBeColored = index < expectedCount;
+
+                // 移除互動性
+                el.style.pointerEvents = 'none';
+
+                if (isColored && shouldBeColored) {
+                    // 正確著色：綠色
+                    el.classList.add('correct-colored');
+                } else if (isColored && !shouldBeColored) {
+                    // 多塗的：紅色
+                    el.classList.add('wrong-colored');
+                } else if (!isColored && shouldBeColored) {
+                    // 應該塗但沒塗：虛線邊框標記
+                    el.classList.add('should-be-colored');
+                }
+            });
+        }
+
+        function showResultsSummary(correct, total, errors) {
+            const summary = document.getElementById('resultsSummary');
+            const accuracy = Math.round((correct / total) * 100);
+            const studentName = document.getElementById('studentName').value || '未填寫';
+
+            let errorListHTML = '';
+            if (errors.length > 0) {
+                errorListHTML = `
+                    <div class="error-list">
+                        <h3>📝 錯誤題目分析</h3>
+                        ${errors.map(e => `
+                            <div class="error-item">
+                                <strong>第 ${e.questionNumber} 題：</strong>${e.message}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            summary.innerHTML = `
+                <h2>🎉 練習完成！</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">學生：${studentName}</p>
+                <div class="score-display">
+                    ${correct} <span>/ ${total}</span>
+                </div>
+                <p style="font-size: 1.2rem; color: ${accuracy >= 80 ? 'var(--success)' : accuracy >= 60 ? 'var(--gold)' : 'var(--error)'};">
+                    正確率：${accuracy}%
+                </p>
+                <div class="time-display">
+                    ⏱️ 完成時間：${formatTime(timerSeconds)}
+                </div>
+                ${errorListHTML}
+                <div class="button-group" style="justify-content: center; margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="generateWorksheet(); resetTimer();">
+                        🔄 再練習一次
+                    </button>
+                </div>
+            `;
+
+            summary.style.display = 'block';
+            summary.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ============ Google Sheets 整合 ============
+        async function sendToGoogleSheets(correct, total, errors) {
+            const sheetsUrl = document.getElementById('sheetsUrl').value.trim();
+            if (!sheetsUrl) return;
+
+            const studentName = document.getElementById('studentName').value || '未填寫';
+            const accuracy = Math.round((correct / total) * 100);
+            const mode = currentMode === 'colorToFraction' ? '看圖寫分數' : '看分數塗圖';
+
+            const data = {
+                timestamp: new Date().toISOString(),
+                studentName: studentName,
+                mode: mode,
+                totalQuestions: total,
+                correctCount: correct,
+                accuracy: accuracy,
+                timeSeconds: timerSeconds,
+                timeFormatted: formatTime(timerSeconds),
+                errors: errors.map(e => `第${e.questionNumber}題: ${e.message}`).join(' | ')
+            };
+
+            try {
+                await fetch(sheetsUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                console.log('已成功發送至 Google Sheets');
+            } catch (error) {
+                console.error('發送至 Google Sheets 失敗:', error);
+            }
+        }
+
+        // ============ 列印功能 ============
+        function handlePrint() {
+            window.focus();
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
+    </script>
+</body>
+
+</html>
