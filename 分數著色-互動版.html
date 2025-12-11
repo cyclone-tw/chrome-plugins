@@ -379,6 +379,29 @@
             padding: 0.25rem 0.5rem;
         }
 
+        /* 列印用空白作答區 */
+        .print-answer-box .numerator-blank {
+            border-bottom: 2px solid var(--text-primary);
+            padding: 0.25rem 0.5rem;
+            min-width: 50px;
+            display: inline-block;
+        }
+
+        .print-answer-box .denominator-blank {
+            padding: 0.25rem 0.5rem;
+            min-width: 50px;
+            display: inline-block;
+        }
+
+        @media print {
+
+            .print-answer-box .numerator-blank,
+            .print-answer-box .denominator-blank {
+                color: black;
+                border-color: black;
+            }
+        }
+
         .fraction-input {
             width: 50px;
             text-align: center;
@@ -705,6 +728,14 @@
                         <option value="bar">只有長條圖</option>
                     </select>
                 </div>
+                <div class="control-group" id="printQuestionTypeGroup">
+                    <label>列印題型</label>
+                    <select id="printQuestionType">
+                        <option value="fractionToColor">看分數塗圖</option>
+                        <option value="colorToFraction">看圖寫分數</option>
+                        <option value="mixed">混合出題</option>
+                    </select>
+                </div>
                 <div class="control-group">
                     <label>分數類型</label>
                     <select id="fractionType">
@@ -870,6 +901,10 @@
                 printBtn.style.display = 'none';
                 submitArea.style.display = 'block';
             }
+
+            // 顯示/隱藏列印題型選擇器（只在列印模式顯示）
+            const printTypeGroup = document.getElementById('printQuestionTypeGroup');
+            printTypeGroup.style.display = mode === 'print' ? 'flex' : 'none';
 
             // 隱藏結果摘要
             document.getElementById('resultsSummary').style.display = 'none';
@@ -1112,17 +1147,40 @@
             const isImproper = question.numerator > question.denominator;
 
             if (currentMode === 'print') {
-                // 列印模式：空白圖形 + 顯示分數
-                chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, 0, chartCount, false, index);
-                inputHTML = `
-                    <div class="fraction-display">
-                        <span>請塗上：</span>
-                        <div class="fraction-box">
-                            <span class="numerator">${question.numerator}</span>
-                            <span class="denominator">${question.denominator}</span>
+                // 列印模式：根據選擇的題型生成
+                const printType = document.getElementById('printQuestionType').value;
+                let questionType = printType;
+
+                // 混合出題時隨機選擇
+                if (printType === 'mixed') {
+                    questionType = Math.random() > 0.5 ? 'fractionToColor' : 'colorToFraction';
+                }
+
+                if (questionType === 'fractionToColor') {
+                    // 看分數塗圖：空白圖形 + 顯示分數
+                    chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, 0, chartCount, false, index);
+                    inputHTML = `
+                        <div class="fraction-display">
+                            <span>請塗上：</span>
+                            <div class="fraction-box">
+                                <span class="numerator">${question.numerator}</span>
+                                <span class="denominator">${question.denominator}</span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // 看圖寫分數：已著色圖形 + 空白輸入框
+                    chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, question.numerator, chartCount, false, index);
+                    inputHTML = `
+                        <div class="fraction-display">
+                            <span>這是</span>
+                            <div class="fraction-box print-answer-box">
+                                <span class="numerator-blank">____</span>
+                                <span class="denominator-blank">____</span>
+                            </div>
+                        </div>
+                    `;
+                }
             } else if (currentMode === 'colorToFraction') {
                 // 看圖寫分數：已著色圖形 + 輸入框
                 chartHTML = createMultipleChartsSVG(question.chartType, question.denominator, question.numerator, chartCount, false, index);
