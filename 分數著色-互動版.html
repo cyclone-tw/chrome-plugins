@@ -595,7 +595,7 @@
         @media print {
             @page {
                 size: A4;
-                margin: 1cm;
+                margin: 0.8cm;
             }
 
             body {
@@ -612,10 +612,42 @@
                 max-width: 100%;
             }
 
+            /* 列印時強制雙欄配置，一頁 6 題 */
+            .worksheet-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+
             .question-card {
                 background: white;
-                border: 1px solid #ccc;
+                border: 1px solid #999;
+                padding: 0.5rem !important;
                 page-break-inside: avoid;
+                min-height: auto;
+            }
+
+            .question-card .question-number {
+                font-size: 0.8rem;
+                padding: 0.25rem 0;
+            }
+
+            .question-chart {
+                margin: 0.25rem 0;
+            }
+
+            /* 縮小圖形 */
+            .chart-svg {
+                transform: scale(0.75);
+                transform-origin: center;
+            }
+
+            .multi-chart-container {
+                gap: 5px !important;
+            }
+
+            .fraction-display {
+                font-size: 0.9rem !important;
             }
 
             .pie-slice,
@@ -625,7 +657,7 @@
 
             .pie-slice.colored,
             .bar-cell.colored {
-                fill: #999;
+                fill: #888;
             }
 
             -webkit-print-color-adjust: exact;
