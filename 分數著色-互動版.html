@@ -630,7 +630,9 @@
                 </div>
                 <div class="control-group">
                     <label>學生姓名</label>
-                    <input type="text" id="studentName" placeholder="請輸入姓名">
+                    <select id="studentName">
+                        <option value="">請選擇學生</option>
+                    </select>
                 </div>
                 <div class="control-group">
                     <label>題目數量</label>
@@ -729,8 +731,55 @@
 
         // ============ 初始化 ============
         window.onload = function () {
+            loadStudents();
             generateWorksheet();
         };
+
+        // 載入學生名單
+        async function loadStudents() {
+            try {
+                const response = await fetch('students.json');
+                const data = await response.json();
+
+                const select = document.getElementById('studentName');
+
+                // 清空現有選項（保留第一個「請選擇」）
+                select.innerHTML = '<option value="">請選擇學生</option>';
+
+                // 如果有班級名稱，可以顯示
+                if (data.className) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = data.className;
+
+                    data.students.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        optgroup.appendChild(option);
+                    });
+
+                    select.appendChild(optgroup);
+                } else {
+                    // 沒有班級名稱就直接加選項
+                    data.students.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        select.appendChild(option);
+                    });
+                }
+
+                console.log('✅ 已載入學生名單:', data.students.length, '人');
+            } catch (error) {
+                console.warn('⚠️ 無法載入 students.json，使用手動輸入模式');
+                // 如果無法載入，改回輸入框
+                const container = document.getElementById('studentName').parentElement;
+                container.innerHTML = `
+                    <label>學生姓名</label>
+                    <input type="text" id="studentName" placeholder="請輸入姓名">
+                `;
+            }
+        }
 
         // ============ 工具函數 ============
         function getRandomInt(min, max) {
