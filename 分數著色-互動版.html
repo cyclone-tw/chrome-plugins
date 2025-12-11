@@ -613,7 +613,10 @@
             }
 
             /* 列印時強制雙欄配置，一頁 6 題 */
-            .worksheet-grid {
+            .worksheet-grid,
+            .worksheet-grid.columns-2,
+            .worksheet-grid.columns-3,
+            .worksheet-grid.columns-4 {
                 display: grid !important;
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 0.5rem !important;
