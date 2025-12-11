@@ -444,6 +444,32 @@
             fill: var(--success) !important;
         }
 
+        /* 送出答案區域 */
+        .submit-area {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            text-align: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .btn-large {
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+        }
+
+        /* 列印結果按鈕 */
+        .btn-print-results {
+            background: var(--accent-orange);
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .btn-print-results:hover {
+            background: var(--accent-orange-light);
+        }
+
         /* 結果摘要 */
         .results-summary {
             background: var(--bg-secondary);
@@ -452,6 +478,31 @@
             padding: 2rem;
             margin-top: 2rem;
             text-align: center;
+        }
+
+        /* 列印結果時的樣式 */
+        @media print {
+            .results-summary {
+                background: white !important;
+                color: black !important;
+                border: 2px solid black !important;
+            }
+
+            .results-summary h2 {
+                color: black !important;
+            }
+
+            .score-display {
+                color: black !important;
+            }
+
+            .error-list {
+                background: #f5f5f5 !important;
+            }
+
+            .error-item {
+                color: black !important;
+            }
         }
 
         .results-summary h2 {
@@ -683,9 +734,6 @@
                 <button class="btn btn-secondary" id="printBtn" onclick="handlePrint()">
                     🖨️ 列印 / 存 PDF
                 </button>
-                <button class="btn btn-success" id="submitBtn" onclick="submitAnswers()" style="display: none;">
-                    ✅ 送出答案
-                </button>
                 <button class="btn btn-secondary" id="timerBtn" onclick="toggleTimer()">
                     ⏱️ 開始計時
                 </button>
@@ -713,6 +761,13 @@
         <!-- 題目區域 -->
         <div id="worksheetGrid" class="worksheet-grid columns-3">
             <!-- 題目將在此生成 -->
+        </div>
+
+        <!-- 送出答案按鈕區域（互動模式時顯示） -->
+        <div id="submitArea" class="submit-area" style="display: none;">
+            <button class="btn btn-success btn-large" onclick="submitAnswers()">
+                ✅ 送出答案
+            </button>
         </div>
 
         <!-- 結果摘要（互動模式用） -->
@@ -806,14 +861,14 @@
 
             // 顯示/隱藏按鈕
             const printBtn = document.getElementById('printBtn');
-            const submitBtn = document.getElementById('submitBtn');
+            const submitArea = document.getElementById('submitArea');
 
             if (mode === 'print') {
                 printBtn.style.display = 'inline-flex';
-                submitBtn.style.display = 'none';
+                submitArea.style.display = 'none';
             } else {
                 printBtn.style.display = 'none';
-                submitBtn.style.display = 'inline-flex';
+                submitArea.style.display = 'block';
             }
 
             // 隱藏結果摘要
@@ -1394,15 +1449,45 @@
                     ⏱️ 完成時間：${formatTime(timerSeconds)}
                 </div>
                 ${errorListHTML}
-                <div class="button-group" style="justify-content: center; margin-top: 1.5rem;">
+                <div class="button-group" style="justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
                     <button class="btn btn-primary" onclick="generateWorksheet(); resetTimer();">
                         🔄 再練習一次
+                    </button>
+                    <button class="btn btn-print-results" onclick="printResults()">
+                        🖨️ 列印成績單
                     </button>
                 </div>
             `;
 
+            // 隱藏送出按鈕區域
+            document.getElementById('submitArea').style.display = 'none';
+
             summary.style.display = 'block';
             summary.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 列印成績結果
+        function printResults() {
+            // 暫時隱藏控制面板
+            const controlPanel = document.querySelector('.control-panel');
+            const navbar = document.querySelector('.navbar');
+
+            controlPanel.classList.add('no-print');
+            navbar.classList.add('no-print');
+
+            // 顯示列印用頭部
+            const printHeader = document.querySelector('.print-header');
+            printHeader.style.display = 'flex';
+
+            // 更新列印頭部資訊
+            const studentName = document.getElementById('studentName').value || '未填寫';
+            document.getElementById('printStudentName').textContent = studentName;
+
+            // 列印
+            window.print();
+
+            // 恢復顯示
+            printHeader.style.display = 'none';
         }
 
         // ============ Google Sheets 整合 ============

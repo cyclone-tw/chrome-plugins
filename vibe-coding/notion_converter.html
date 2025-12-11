@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Markdown Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #37352f;
+            --border-color: #e0e0e0;
+            --accent-color: #2eaadc;
+            --hover-bg: #f7f7f5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0; /* Important for nested flex scroll */
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: var(--hover-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            padding: 16px;
+            resize: none;
+            font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        #preview {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            /* Notion-like typography */
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* Notion-like Styles for Preview */
+        #preview h1 { font-size: 1.875em; margin-top: 1em; margin-bottom: 0.5em; font-weight: 600; }
+        #preview h2 { font-size: 1.5em; margin-top: 1em; margin-bottom: 0.5em; font-weight: 600; }
+        #preview h3 { font-size: 1.25em; margin-top: 1em; margin-bottom: 0.5em; font-weight: 600; }
+        #preview p { margin-bottom: 0.5em; }
+        #preview ul, #preview ol { margin-top: 0; margin-bottom: 0.5em; padding-left: 1.5em; }
+        #preview li { margin-bottom: 0.25em; }
+        #preview blockquote {
+            border-left: 3px solid currentcolor;
+            padding-left: 1em;
+            margin-left: 0;
+            opacity: 0.7;
+        }
+        #preview code {
+            font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+            background: rgba(135,131,120,0.15);
+            color: #EB5757;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-size: 85%;
+        }
+        #preview pre {
+            background: #f7f6f3;
+            padding: 16px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #preview pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+            font-size: 100%;
+        }
+        #preview a {
+            color: inherit;
+            text-decoration: underline;
+            text-decoration-color: rgba(55, 53, 47, 0.4);
+        }
+        #preview hr {
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            margin: 1.5em 0;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">Markdown Input</div>
+            <textarea id="markdown-input" placeholder="Paste your Markdown here..."></textarea>
+        </div>
+        <div class="panel">
+            <div class="panel-header">
+                Preview
+                <button class="btn" onclick="copyToClipboard()">Copy for Notion</button>
+            </div>
+            <div id="preview"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Copied to clipboard!</div>
+
+    <script>
+        const input = document.getElementById('markdown-input');
+        const preview = document.getElementById('preview');
+        const toast = document.getElementById('toast');
+
+        // Configure marked to handle breaks
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        function updatePreview() {
+            const markdownText = input.value;
+            const htmlContent = marked.parse(markdownText);
+            preview.innerHTML = htmlContent;
+        }
+
+        input.addEventListener('input', updatePreview);
+
+        async function copyToClipboard() {
+            // We need to copy the *rendered HTML* to the clipboard as 'text/html'
+            // This is what allows Notion to interpret the formatting correctly.
+            
+            const htmlContent = preview.innerHTML;
+            
+            // Create a Blob with the HTML content
+            // We wrap it in a div to ensure block elements are treated correctly if needed,
+            // though usually raw HTML fragments work fine.
+            const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+            const blobText = new Blob([input.value], { type: 'text/plain' });
+
+            try {
+                const data = [new ClipboardItem({
+                    'text/html': blobHtml,
+                    'text/plain': blobText
+                })];
+                
+                await navigator.clipboard.write(data);
+                showToast();
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers or non-secure contexts (though less likely to work for rich text)
+                alert('Clipboard API failed. Please try using a secure context (HTTPS/localhost).');
+            }
+        }
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Initial placeholder text
+        input.value = "# Hello Notion!\n\nPaste your markdown here.\n\n- List item 1\n- List item 2\n\n**Bold text** and *Italic text*";
+        updatePreview();
+    </script>
+</body>
+</html>
