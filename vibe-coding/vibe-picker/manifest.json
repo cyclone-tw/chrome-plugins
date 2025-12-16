@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Vibe Picker",
+  "version": "1.0.0",
+  "description": "A beautiful color picker tool for designers",
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Vibe Picker"
+  }
+}
