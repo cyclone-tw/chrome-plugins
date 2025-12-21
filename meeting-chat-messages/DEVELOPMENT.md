@@ -364,4 +364,143 @@ function scheduleRetry(): void {
 
 ---
 
+## 🔮 維護指南：當 Google Meet 改版時
+
+### 淘汰風險評估
+
+| 風險 | 原因 | 影響程度 |
+|------|------|----------|
+| **DOM 結構改變** | Google Meet 經常更新 UI | ⭐⭐⭐⭐⭐ 高 |
+| **CSS Class 變更** | `.Ss4fHf`, `.poVWob` 等 class 可能改名 | ⭐⭐⭐⭐ 高 |
+| **Manifest V3 政策變更** | Chrome 可能進一步限制 API | ⭐⭐ 中 |
+
+### 較穩定的選擇器
+
+| 元素 | 穩定原因 |
+|------|---------|
+| `data-message-id` | Google 內部 API 識別碼，較少變動 |
+| `aria-live="polite"` | 無障礙標準，不太可能移除 |
+| `jsname="dTKtvb"` | Google 內部框架使用，相對穩定 |
+
+### 快速更新流程（當擴充套件失效時）
+
+#### Step 1：診斷問題（2 分鐘）
+
+```javascript
+// 在 Google Meet Console 執行
+(function() {
+    console.log('=== DOM 結構診斷 ===');
+    
+    // 1. 檢查聊天容器
+    const containers = [
+        '[aria-live="polite"]',
+        '[role="log"]',
+        '[data-message-id]'
+    ];
+    containers.forEach(sel => {
+        const el = document.querySelector(sel);
+        console.log(`${sel}: ${el ? '✅ 存在' : '❌ 不存在'}`);
+    });
+    
+    // 2. 找出可能的訊息元素
+    console.log('\n=== 可能的訊息元素 ===');
+    const candidates = document.querySelectorAll('[data-message-id]');
+    if (candidates.length > 0) {
+        console.log(`找到 ${candidates.length} 個 data-message-id 元素`);
+        console.log('第一個元素結構:', candidates[0].outerHTML.slice(0, 300));
+    } else {
+        // 嘗試其他選擇器
+        const fallbacks = ['[role="listitem"]', '[data-message]', '[class*="message"]'];
+        fallbacks.forEach(sel => {
+            const els = document.querySelectorAll(sel);
+            if (els.length > 0) console.log(`備選: ${sel} 找到 ${els.length} 個`);
+        });
+    }
+})();
+```
+
+#### Step 2：更新選擇器（5 分鐘）
+
+修改這兩個檔案：
+- `src/content/parser.ts` → 更新訊息解析邏輯
+- `src/content/observer.ts` → 更新容器和訊息選擇器
+
+#### Step 3：重新建置（1 分鐘）
+
+```bash
+npm run build
+# 然後在 chrome://extensions/ 重新載入
+```
+
+### 降低維護成本的建議
+
+#### 1. 使用穩定的選擇器優先順序
+
+```typescript
+const SELECTORS = {
+    // 1. data-* 屬性（最穩定）
+    message: 'div[data-message-id]',
+    
+    // 2. aria-* 屬性（無障礙標準，較穩定）
+    container: '[aria-live="polite"]',
+    
+    // 3. jsname 屬性（Google 內部，相對穩定）
+    content: '[jsname="dTKtvb"]',
+    
+    // 4. class 名稱（最不穩定，避免使用）
+    // sender: '.poVWob'  // ❌ 可能隨時改變
+};
+```
+
+#### 2. 加入備用選擇器
+
+```typescript
+function findChatContainer(): Element | null {
+    const selectors = [
+        '[aria-live="polite"]',  // 主要
+        '[role="log"]',          // 備用 1
+        '[data-panel-id*="chat"]' // 備用 2
+    ];
+    
+    for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (el) return el;
+    }
+    return null;
+}
+```
+
+#### 3. 記錄選擇器版本
+
+```typescript
+/**
+ * 選擇器配置
+ * @lastVerified 2024-12-22
+ * @meetVersion 最後測試時的 Meet 版本
+ */
+const SELECTORS = { ... };
+```
+
+### 現實維護預估
+
+| 情況 | 預估頻率 | 修復時間 |
+|------|---------|---------|
+| Class 名稱改變 | 每 2-3 個月 | 10-30 分鐘 |
+| DOM 結構大改 | 每 6-12 個月 | 1-2 小時 |
+| 完全失效需重寫 | 罕見 | 數小時 |
+
+### 讓 AI 協助維護
+
+當擴充套件失效時，可以這樣告訴 AI 助手：
+
+> "Meet Chat Logger 擴充套件無法擷取訊息了，請幫我：
+> 1. 分析 Google Meet 目前的 DOM 結構
+> 2. 更新 parser.ts 和 observer.ts 的選擇器
+> 3. 重新建置並測試"
+
+只要這份 `DEVELOPMENT.md` 中的診斷腳本和避坑指南完整，AI 就能快速理解並修復問題。
+
+---
+
 *最後更新：2024-12-22*
+
